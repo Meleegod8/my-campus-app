@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>学内限定フリマアプリ</title>
   <style>
-    body { font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; background-color: #f8fafc; color: #334155; }
+    body { font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; background-color: #f8fafc; color: #334155; padding-bottom: 80px; }
     h1 { font-size: 20px; text-align: center; color: #0f172a; margin-bottom: 16px; }
     .search-box { margin-bottom: 16px; }
     .search-input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; }
@@ -16,7 +16,7 @@
     .btn { display: block; width: 100%; padding: 12px; background: #0284c7; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; margin-top: 12px; cursor: pointer; text-align: center; text-decoration: none; box-sizing: border-box; }
     .btn-buy { background: #16a34a; margin-top: 8px; }
     
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 9999; }
     .modal-content { background: white; padding: 20px; border-radius: 12px; width: 85%; max-width: 380px; }
     .modal-content input, .modal-content textarea { width: 100%; margin-bottom: 10px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
     .close-btn { background: #64748b; margin-top: 8px; }
@@ -55,22 +55,27 @@
     const SUPABASE_URL = 'https://uzgluanmcrjfpwelwoh.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_5TOACgY13vu0wSJ_LLKWAw_nHE8MYGE';
     
-    let supabase;
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    } catch(e) {
-      console.error('Supabase初期化エラー:', e);
-    }
-
+    let supabase = null;
     let allItems = [];
 
+    function initSupabase() {
+      if (window.supabase && !supabase) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      }
+    }
+
     window.onload = function() {
+      initSupabase();
       fetchItems();
     };
 
     // データベースから取得
     async function fetchItems() {
-      if (!supabase) return;
+      initSupabase();
+      if (!supabase) {
+        document.getElementById('item-list').innerText = '通信エラーが発生しました。再読み込みしてください。';
+        return;
+      }
       const { data, error } = await supabase
         .from('items')
         .select('*')
@@ -134,6 +139,12 @@
 
     // 新規保存
     async function addItem() {
+      initSupabase();
+      if (!supabase) {
+        alert('Supabaseの接続に失敗しています。');
+        return;
+      }
+
       const tag = document.getElementById('input-tag').value;
       const title = document.getElementById('input-title').value;
       const description = document.getElementById('input-desc').value;
